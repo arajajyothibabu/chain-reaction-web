@@ -11,6 +11,6 @@ body {
 }
 
 #game {
-    width: 480px;
-    height: 720px;
+    width: 100%; /*480px;*/
+    height: 100vh; /*720px*/
 }
