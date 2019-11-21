@@ -1,4 +1,82 @@
+class CellData {
+    x;
+    y;
+    _id;
+    maxBalls;
+    color;
+    count = 0;
+    balls = [];
+    left;
+    right;
+    top;
+    bottom;
 
+    constructor(x, y, id, maxBalls, color) {
+        this.x = x;
+        this.y = y;
+        this._id = id;
+        this.maxBalls = maxBalls;
+        this.color = color;
+    }
+}
+
+class GameState {
+
+    state = [];
+    rows;
+    cols;
+    store = {};
+
+    constructor(rows, cols){
+        this.rows = rows;
+        this.cols = cols;
+        this.buildState();
+    }
+
+    getMaxBalls = (x, y, rows, cols) => {
+        if(
+            (x === 0 && y === 0) ||
+            (x === rows - 1 && y === cols - 1) ||
+            (x === 0 && y === cols - 1) ||
+            (x === rows - 1 && y === 0)
+        ){
+            return 1;
+        } else if (
+            (y > 0 && y < cols - 1 && (x === 0 || x === rows - 1)) ||
+            (x > 0 && x < rows - 1 && (y === 0 || y === cols - 1))
+        ){
+            return 2;
+        } else {
+            return 3;
+        }
+    };
+
+    updateWithNeighbours = (cellData = {}) => {
+        const { x, y } = cellData;
+        cellData.left = x + "_" + Math.min(0, y - 1);
+        cellData.right = x + "_" + Math.min(this.cols - 1, y + 1);
+        cellData.top = Math.min(0, x - 1) + "_" + y;
+        cellData.bottom = Math.min(this.rows - 1, x + 1) + "_" + y;
+        return cellData;
+    };
+
+    buildState = () => {
+        for(let i = 0; i < this.rows; i++){
+            const row = [];
+            for(let j = 0; j < this.cols; j++){
+                const _id = i + "_" + j;
+                const cellData = new CellData(i, j, _id, this.getMaxBalls(i, j, this.rows, this.cols));
+                this.updateWithNeighbours(cellData);
+                this.store[_id] = cellData;
+                row.push(cellData);
+            }
+            this.state.push(row);
+        }
+    };
+
+
+
+}
 
 class ChainReaction {
     container;
@@ -12,11 +90,13 @@ class ChainReaction {
     cellSize;
     rows;
     cols;
+    state;
 
     constructor(container, size = 15) {
         this.container = container;
         this.size = size;
         this.init();
+        this.state = new GameState(this.rows, this.cols);
     }
 
     init = () => {
@@ -50,6 +130,18 @@ class ChainReaction {
         } else {
             throw new Error("Need Container to run the Game!");
         }
+    };
+
+    createCell = (size) => {
+        const cell = document.createElement("div");
+        cell.setAttribute("style", `display: flex;height: ${size}px;width: ${size}px;`);
+        return cell;
+    };
+
+    createBall = (size, color) => {
+        const ball = document.createElement("div");
+        ball.setAttribute("style", `display: flex;background: black;border-radius: 50%;height: ${size}px;width: ${size}px;margin: 0;background: radial-gradient(circle at 100px 100px, ${color}, #000);`);
+        return ball;
     };
 
     buildCanvas = () => {
