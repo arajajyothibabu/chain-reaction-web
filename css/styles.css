@@ -14,3 +14,32 @@ body {
     width: 100%; /*480px;*/
     height: 100vh; /*720px*/
 }
+
+div.wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    background: #000;
+    /*border-left: 1px solid #CCC;
+    border-top: 1px solid #CCC;*/
+    overflow: hidden;
+}
+
+div.cell {
+    display: flex;
+    border-right: 1px solid #CCC;
+    border-bottom: 1px solid #CCC;
+    position: relative;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    flex: auto;
+}
+
+div.ball {
+    display: block;
+    background: black;
+    border-radius: 100%;
+    margin: 0 1px;
+    pointer-events: none;
+}

@@ -64,7 +64,7 @@ class GameState {
         for(let i = 0; i < this.rows; i++){
             const row = [];
             for(let j = 0; j < this.cols; j++){
-                const _id = i + "_" + j;
+                const _id = this.getId(i, j);
                 const cellData = new CellData(i, j, _id, this.getMaxBalls(i, j, this.rows, this.cols));
                 this.updateWithNeighbours(cellData);
                 this.store[_id] = cellData;
@@ -74,7 +74,13 @@ class GameState {
         }
     };
 
+    getId = (rowId, cellId) => {
+        return `${rowId}-${cellId}`;
+    };
 
+    getCellData = (id) => {
+        return this.store[id];
+    };
 
 }
 
@@ -97,13 +103,11 @@ class ChainReaction {
         this.size = size;
         this.init();
         this.state = new GameState(this.rows, this.cols);
+        this.drawBoard();
     }
 
     init = () => {
         this.processContainer();
-        this.buildCanvas();
-        this.drawBoard();
-        this.drawBall();
     };
 
     calculateDimensions = () => {
@@ -132,56 +136,44 @@ class ChainReaction {
         }
     };
 
-    createCell = (size) => {
+    createWrapper = () => {
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("wrapper");
+        wrapper.setAttribute("style", `width: ${this.width}px;height: ${this.height}px;`);
+        return wrapper;
+    };
+
+    createCell = (size, id) => {
         const cell = document.createElement("div");
-        cell.setAttribute("style", `display: flex;height: ${size}px;width: ${size}px;`);
+        cell.classList.add("cell");
+        cell.setAttribute("style", `height: ${size}px;width: ${size}px;`);
+        cell.setAttribute("id", id);
+        cell.addEventListener("click", this.cellClickListener);
         return cell;
     };
 
-    createBall = (size, color) => {
+    createBall = (size = 20, color = "#5cabff") => {
         const ball = document.createElement("div");
-        ball.setAttribute("style", `display: flex;background: black;border-radius: 50%;height: ${size}px;width: ${size}px;margin: 0;background: radial-gradient(circle at 100px 100px, ${color}, #000);`);
+        ball.classList.add("ball");
+        ball.setAttribute("style", `height: ${size}px;width: ${size}px;background: radial-gradient(circle at 50% 50%, ${color}, #000);`);
         return ball;
     };
 
-    buildCanvas = () => {
-        this.canvas = document.createElement("canvas");
-        this.canvas.width = this.width;
-        this.canvas.height = this.height;
-        this.container.appendChild(this.canvas);
-        this.ctx = this.canvas.getContext("2d");
-    };
-
-    fillBackground = (color = "#000000") => {
-        this.ctx.fillStyle = color;
-        this.ctx.fillRect(0, 0, this.width, this.height);
-    };
-
-    drawBall = (x = 10, y = 10, radius = 10, color = "#FF0000") => {
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, 10, 0, Math.PI*2);
-        this.ctx.fillStyle = color;
-        this.ctx.fill();
-        this.ctx.closePath();
-    };
-
     drawBoard = () => {
-
-        this.fillBackground();
-
-        const padding = 0, spacing = 0;
-        //vertical
-        for (let x = 0; x <= this.width; x += this.cellSize) {
-            this.ctx.moveTo(spacing + x + padding, padding);
-            this.ctx.lineTo(spacing + x + padding, this.height + padding);
+        const wrapper = this.createWrapper();
+        for (let i = 0; i < this.rows; i++) {
+            for(let j = 0; j < this.cols; j++){
+                wrapper.append(this.createCell(this.cellSize, this.state.getId(i, j)));
+            }
         }
-        //horizontal
-        for (let x = 0; x <= this.height; x += this.cellSize) {
-            this.ctx.moveTo(padding, spacing + x + padding);
-            this.ctx.lineTo(this.width + padding, spacing + x + padding);
-        }
-        this.ctx.strokeStyle = "#CCCCCC";
-        this.ctx.stroke();
+        this.container.appendChild(wrapper);
+    };
+
+    cellClickListener = (event) => {
+        const id = event.target.id;
+        const cellData = this.state.getCellData(id);
+        const ball = this.createBall();
+        event.target.appendChild(ball);
     };
 
     generateGradient = (x, y, size, color) => {
