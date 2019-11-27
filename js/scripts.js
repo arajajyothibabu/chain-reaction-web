@@ -53,10 +53,10 @@ class GameState {
 
     updateWithNeighbours = (cellData = {}) => {
         const { x, y } = cellData;
-        cellData.left = x + "_" + Math.min(0, y - 1);
-        cellData.right = x + "_" + Math.min(this.cols - 1, y + 1);
-        cellData.top = Math.min(0, x - 1) + "_" + y;
-        cellData.bottom = Math.min(this.rows - 1, x + 1) + "_" + y;
+        cellData.left = this.getId(x, Math.max(0, y - 1));
+        cellData.right = this.getId(x, Math.min(this.cols - 1, y + 1));
+        cellData.top = this.getId(Math.max(0, x - 1), y);
+        cellData.bottom = this.getId(Math.min(this.rows - 1, x + 1), + y);
         return cellData;
     };
 
@@ -90,20 +90,22 @@ class ChainReaction {
     containerHeight;
     width;
     height;
-    canvas;
-    ctx;
     size;
     cellSize;
     rows;
     cols;
     state;
+    playerCount;
+    COLORS = ["#FF0000", "#0000FF", "#00FF00", "#FF00E4", "#00FFDC", "#FF6400"];
+    currentPlayer = 0;
 
-    constructor(container, size = 15) {
+    constructor(container, size = 15, playerCount = 2) {
         this.container = container;
         this.size = size;
         this.init();
         this.state = new GameState(this.rows, this.cols);
         this.drawBoard();
+        this.playerCount = playerCount;
     }
 
     init = () => {
@@ -155,7 +157,9 @@ class ChainReaction {
     createBall = (size = 20, color = "#5cabff") => {
         const ball = document.createElement("div");
         ball.classList.add("ball");
-        ball.setAttribute("style", `height: ${size}px;width: ${size}px;background: radial-gradient(circle at 50% 50%, ${color}, #000);`);
+        ball.style.width = `${size}px`;
+        ball.style.height = `${size}px`;
+        ball.style.background = `radial-gradient(circle at 50% 50%, ${color}, #000)`;
         return ball;
     };
 
@@ -169,22 +173,87 @@ class ChainReaction {
         this.container.appendChild(wrapper);
     };
 
+    distributeBalls = (cellData, currentCell) => {
+        const { left, right, top, bottom, _id, color } = cellData;
+        if(left !== _id){
+            this.removeBall(currentCell, cellData);
+            this.drawBall(left, this.state.getCellData(left), color);
+        }
+        if(right !== _id){
+            this.removeBall(currentCell, cellData);
+            this.drawBall(right, this.state.getCellData(right), color);
+        }
+        if(top !== _id){
+            this.removeBall(currentCell, cellData);
+            this.drawBall(top, this.state.getCellData(top), color);
+        }
+        if(bottom !== _id){
+            this.removeBall(currentCell, cellData);
+            this.drawBall(bottom, this.state.getCellData(bottom), color);
+        }
+    };
+
+    removeBall = (targetCell, cellData) => {
+        if(cellData.count > 0){
+            const ball = cellData.balls.pop();
+            cellData.count--;
+            targetCell.removeChild(ball);
+            if(cellData.count === 0){
+                cellData.color = null;
+            }
+        }
+    };
+
+    updateBallsColor = (balls = [], color) => {
+        balls.forEach(ball => {
+            ball.style.background = `radial-gradient(circle at 50% 50%, ${color}, #000)`;
+        });
+    };
+
+    drawBall = (targetCell, cellData, color = cellData.color) => {
+        setTimeout(() => {
+            let element = targetCell;
+            if(typeof element === "string"){
+                element = document.getElementById(targetCell);
+            }
+            if(color !== cellData.color){ //updating colors of existing balls
+                this.updateBallsColor(cellData.balls, color);
+                cellData.color = color;
+            }
+            if(cellData.count < cellData.maxBalls){
+                const ball = this.createBall(20, color);
+                element.appendChild(ball);
+                cellData.count++;
+                cellData.balls.push(ball);
+            } else {
+                this.distributeBalls(cellData, element);
+            }
+        }, 0);
+    };
+
     cellClickListener = (event) => {
         const id = event.target.id;
         const cellData = this.state.getCellData(id);
-        const ball = this.createBall();
-        event.target.appendChild(ball);
+        const currentColor = this.getCurrentColor();
+        if(cellData.color){
+            if(cellData.color === currentColor){
+                this.drawBall(event.target, cellData);
+                this.updateCurrentPlayer();
+            }
+        } else {
+            cellData.color = currentColor;
+            this.drawBall(event.target, cellData);
+            this.updateCurrentPlayer();
+        }
     };
 
-    generateGradient = (x, y, size, color) => {
-        const gradient = this.ctx.createLinearGradient(-size, x, size, y);
-        gradient.addColorStop(0, color);
-        gradient.addColorStop(1, '#FFFFFF');
-        return gradient;
+    getCurrentColor = () => {
+        return this.COLORS[this.currentPlayer];
     };
 
-    colorInHSL = (fraction) => {
-        return `hsl(${fraction * 360}, 100%, 50%)`;
+    updateCurrentPlayer = () => {
+        this.currentPlayer = (this.currentPlayer + 1) % this.playerCount;
+        return this.currentPlayer;
     };
 
 }
