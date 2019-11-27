@@ -221,7 +221,7 @@ class ChainReaction {
                 cellData.color = color;
             }
             if(cellData.count < cellData.maxBalls){
-                const ball = this.createBall(20, color);
+                const ball = this.createBall(this.cellSize * 0.40, color);
                 element.appendChild(ball);
                 cellData.count++;
                 cellData.balls.push(ball);
